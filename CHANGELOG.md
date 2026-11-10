@@ -12,6 +12,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - `sd` now processes input line-by-line by default, reducing memory usage and
     enabling streaming output for stdin
   - The previous whole-file behavior is still available via `--across` / `-A`
+- Exit with status 2 and a one-line stderr message when the pattern matched no
+  input
+  - The message names the input and suggests `-F` when a regex FIND contains
+    `$` or `(`
+  - `--allow-no-match` restores the previous exit status 0 without the message
+  - `-m` / `--must-match` is still accepted but now matches the default
 
 ### Improvements
 

@@ -340,94 +340,108 @@ mod cli {
         Ok(())
     }
 
-    /// Exit status used by `--must-match` when nothing matched.
+    /// Exit status when the pattern matched no input.
     const NO_MATCH: i32 = 2;
 
     #[test]
-    fn no_match_succeeds_by_default() -> Result<()> {
+    fn no_match_fails_and_names_the_file() -> Result<()> {
+        let mut file = tempfile::NamedTempFile::new()?;
+        file.write_all(b"abc\n")?;
+        let path = file.into_temp_path();
+        let path = path.to_str().unwrap();
+
+        sd().args(["nowhere", "here", path])
+            .assert()
+            .code(NO_MATCH)
+            .stderr(format!("sd: no match in {path}\n"));
+        // The exit status reports the outcome, it does not roll anything back,
+        // and with no match there was nothing to write anyway.
+        assert_file(Path::new(path), "abc\n");
+
+        Ok(())
+    }
+
+    #[test]
+    fn allow_no_match_succeeds_silently() -> Result<()> {
         let mut file = tempfile::NamedTempFile::new()?;
         file.write_all(b"abc\n")?;
         let path = file.into_temp_path();
 
-        sd().args(["nowhere", "here", path.to_str().unwrap()])
+        sd().args(["--allow-no-match", "nowhere", "here"])
+            .arg(&path)
             .assert()
-            .success();
+            .success()
+            .stderr("");
         assert_file(&path, "abc\n");
 
-        sd().args(["nowhere", "here"])
+        sd().args(["--allow-no-match", "nowhere", "here"])
             .write_stdin("abc\n")
             .assert()
             .success()
-            .stdout("abc\n");
+            .stdout("abc\n")
+            .stderr("");
 
         Ok(())
     }
 
+    /// Callers written for the opt-in flag keep working now that it is the
+    /// default.
     #[test]
-    fn must_match_fails_when_nothing_matched() -> Result<()> {
+    fn must_match_flag_is_still_accepted() -> Result<()> {
         let mut file = tempfile::NamedTempFile::new()?;
         file.write_all(b"abc\n")?;
         let path = file.into_temp_path();
 
-        sd().args(["-m", "nowhere", "here", path.to_str().unwrap()])
-            .assert()
-            .code(NO_MATCH);
-        // The exit status reports the outcome, it does not roll anything back,
-        // and with no match there was nothing to write anyway.
-        assert_file(&path, "abc\n");
-
-        Ok(())
-    }
-
-    #[test]
-    fn must_match_succeeds_when_something_matched() -> Result<()> {
-        let mut file = tempfile::NamedTempFile::new()?;
-        file.write_all(b"abc\n")?;
-        let path = file.into_temp_path();
-
-        sd().args(["--must-match", "abc", "xyz", path.to_str().unwrap()])
+        sd().args(["--must-match", "abc", "xyz"])
+            .arg(&path)
             .assert()
             .success();
         assert_file(&path, "xyz\n");
 
+        sd().args(["-m", "abc", "xyz"])
+            .arg(&path)
+            .assert()
+            .code(NO_MATCH);
+
         Ok(())
     }
 
     #[test]
-    fn must_match_stdin() {
-        sd().args(["-m", "foo", "bar"])
+    fn no_match_on_stdin_still_echoes_input() {
+        sd().args(["foo", "bar"])
             .write_stdin("foo\n")
             .assert()
             .success()
             .stdout("bar\n");
 
-        sd().args(["-m", "foo", "bar"])
+        sd().args(["foo", "bar"])
             .write_stdin("baz\n")
             .assert()
             .code(NO_MATCH)
-            .stdout("baz\n");
+            .stdout("baz\n")
+            .stderr("sd: no match in stdin\n");
     }
 
     #[test]
-    fn must_match_preview() {
-        sd().args(["-m", "-p", "foo", "bar"])
+    fn preview_fails_when_nothing_matches() {
+        sd().args(["-p", "foo", "bar"])
             .write_stdin("baz\n")
             .assert()
             .code(NO_MATCH);
     }
 
     #[test]
-    fn must_match_across() -> Result<()> {
+    fn whole_file_replacement_fails_when_nothing_matches() -> Result<()> {
         let mut file = tempfile::NamedTempFile::new()?;
         file.write_all(b"a\nb\n")?;
         let path = file.into_temp_path();
 
-        sd().args(["-m", "-A", r"a\nb", "X", path.to_str().unwrap()])
+        sd().args(["-A", r"a\nb", "X", path.to_str().unwrap()])
             .assert()
             .success();
         assert_file(&path, "X\n");
 
-        sd().args(["-m", "-A", "nowhere", "X", path.to_str().unwrap()])
+        sd().args(["-A", "nowhere", "X", path.to_str().unwrap()])
             .assert()
             .code(NO_MATCH);
 
@@ -436,47 +450,52 @@ mod cli {
 
     /// The status describes the run as a whole, so one matching input is enough.
     #[test]
-    fn must_match_is_satisfied_by_any_input() -> Result<()> {
+    fn any_matching_input_satisfies_the_run() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let hit = dir.path().join("hit.txt");
         let miss = dir.path().join("miss.txt");
         fs::write(&hit, "abc\n")?;
         fs::write(&miss, "xyz\n")?;
 
-        sd().args([
-            "-m",
-            "abc",
-            "def",
-            hit.to_str().unwrap(),
-            miss.to_str().unwrap(),
-        ])
-        .assert()
-        .success();
+        sd().args(["abc", "def"])
+            .args([&hit, &miss])
+            .assert()
+            .success();
         assert_file(&hit, "def\n");
         assert_file(&miss, "xyz\n");
 
         fs::write(&hit, "xyz\n")?;
-        sd().args([
-            "-m",
-            "abc",
-            "def",
-            hit.to_str().unwrap(),
-            miss.to_str().unwrap(),
-        ])
-        .assert()
-        .code(NO_MATCH);
+        sd().args(["abc", "def"])
+            .args([&hit, &miss])
+            .assert()
+            .code(NO_MATCH)
+            .stderr("sd: no match in any of 2 files\n");
 
         Ok(())
+    }
+
+    /// A `$` in FIND is an anchor, not a dollar sign, which is a common reason
+    /// for a pattern meant literally to find nothing.
+    #[test]
+    fn no_match_with_regex_metacharacters_suggests_fixed_strings() {
+        sd().args(["cost $5", "cost $6"])
+            .write_stdin("cost $5\n")
+            .assert()
+            .code(NO_MATCH)
+            .stderr(
+                "sd: no match in stdin \
+                 (FIND is a regex; use -F to match $ and ( literally)\n",
+            );
     }
 
     /// Errors keep their own status, so a script can tell "found nothing" apart
     /// from "could not run".
     #[test]
-    fn must_match_does_not_mask_errors() -> Result<()> {
+    fn errors_are_not_reported_as_no_match() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let missing = dir.path().join("missing.txt");
 
-        sd().args(["-m", "abc", "def", missing.to_str().unwrap()])
+        sd().args(["abc", "def", missing.to_str().unwrap()])
             .assert()
             .failure()
             .code(1);

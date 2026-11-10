@@ -172,13 +172,13 @@ Install through
    Good ol' unix philosophy to the rescue.
 
    ```sh
-   fd --type file --exec sd 'from "react"' 'from "preact"'
+   fd --type file --exec sd --allow-no-match 'from "react"' 'from "preact"'
    ```
 
    Same, but with backups (consider version control).
 
    ```bash
-   fd --type file --exec cp {} {}.bk \; --exec sd 'from "react"' 'from "preact"'
+   fd --type file --exec cp {} {}.bk \; --exec sd --allow-no-match 'from "react"' 'from "preact"'
    ```
 
 ### Edge cases
@@ -222,30 +222,33 @@ To escape the `$` character, use `$$`:
 $bar
 ```
 
-### Requiring a match
+### When nothing matches
 
-Like `sed`, sd exits successfully whether or not the pattern matched anything, so
-a typo in the pattern looks the same as a file that needed no changes:
+Unlike `sed`, sd exits with status 2 and says so on stderr when the pattern
+matched none of the input, so a typo in the pattern does not look like a file
+that needed no changes:
 
 ```bash
 ❯ echo "foo" | sd 'typo' 'bar'
 foo
-❯ echo $?
-0
-```
-
-Pass `-m` / `--must-match` to exit with status 2 when the pattern matched none of
-the input. This is useful in scripts and CI, where a silently vacuous edit is
-worse than a loud failure:
-
-```bash
-❯ echo "foo" | sd -m 'typo' 'bar'
-foo
+sd: no match in stdin
 ❯ echo $?
 2
 ```
 
-The flag only changes the exit status. Inputs that did match are replaced either
-way, and the status refers to the run as a whole, so one matching file out of
-several is enough to succeed. Errors keep their own status of 1, so a script can
-tell "the pattern found nothing" apart from "sd could not do its job".
+If the pattern contains `$` or `(` outside of `-F` mode, the message also
+suggests `-F`, since those are often meant literally.
+
+The status refers to the run as a whole, so one matching file out of several is
+enough to succeed, and inputs that did match are replaced either way. Errors keep
+their own status of 1, so a script can tell "the pattern found nothing" apart
+from "sd could not do its job".
+
+Pass `--allow-no-match` to exit 0 without the message, as `sed` does:
+
+```bash
+❯ echo "foo" | sd --allow-no-match 'typo' 'bar'
+foo
+❯ echo $?
+0
+```

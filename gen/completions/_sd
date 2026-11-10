@@ -25,8 +25,9 @@ _sd() {
 '--fixed-strings[Treat FIND and REPLACE_WITH args as literal strings]' \
 '-A[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming]' \
 '--across[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming]' \
-'-m[Exit with a non-zero status if the pattern matched no input. Without this flag sd exits 0 whether or not anything was replaced, which matches sed. Inputs that did match are still replaced either way]' \
-'--must-match[Exit with a non-zero status if the pattern matched no input. Without this flag sd exits 0 whether or not anything was replaced, which matches sed. Inputs that did match are still replaced either way]' \
+'--allow-no-match[Exit 0 even if the pattern matched no input, like sed. By default sd exits 2 and says so on stderr. Inputs that did match are replaced either way]' \
+'-m[Accepted for compatibility; failing on no match is now the default]' \
+'--must-match[Accepted for compatibility; failing on no match is now the default]' \
 '-h[Print help (see more with '\''--help'\'')]' \
 '--help[Print help (see more with '\''--help'\'')]' \
 '-V[Print version]' \

@@ -17,7 +17,7 @@ pub use self::replacer::Replacer;
 /// Core processing function that handles file replacement
 ///
 /// Returns whether the pattern matched any of the inputs, so that callers can
-/// implement `--must-match`. Reporting it rather than acting on it keeps the
+/// report a run that matched nothing. Reporting it rather than acting on it keeps the
 /// exit-status policy in the CLI.
 pub fn process_sources(
     replacer: &Replacer,

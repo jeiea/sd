@@ -145,13 +145,13 @@ hyperfine --warmup 3 --export-markdown out.md \
    好的 Unix 哲学来拯救我们了。
 
    ```sh
-   fd --type file --exec sd 'from "react"' 'from "preact"'
+   fd --type file --exec sd --allow-no-match 'from "react"' 'from "preact"'
    ```
 
    同理，但带有备份（考虑版本控制）。
 
    ```bash
-   fd --type file --exec cp {} {}.bk \; --exec sd 'from "react"' 'from "preact"'
+   fd --type file --exec cp {} {}.bk \; --exec sd --allow-no-match 'from "react"' 'from "preact"'
    ```
 
 ### 特殊情况

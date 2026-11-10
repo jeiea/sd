@@ -47,7 +47,7 @@ fn gen_man(base_dir: &Path) {
         ("1", "Unsuccessful program execution."),
         (
             "2",
-            "The pattern matched no input, and --must-match was given.",
+            "The pattern matched no input, and --allow-no-match was not given.",
         ),
         ("101", "The program panicked."),
     ];
