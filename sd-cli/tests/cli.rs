@@ -340,6 +340,30 @@ mod cli {
         Ok(())
     }
 
+    #[test]
+    fn fixed_string_with_newline_replaces_across_lines() -> Result<()> {
+        let mut file = tempfile::NamedTempFile::new()?;
+        file.write_all(b"import a\nimport b\nrest\n")?;
+        let path = file.into_temp_path();
+
+        sd().args(["-F", "import a\nimport b", "import c"])
+            .arg(&path)
+            .assert()
+            .success();
+        assert_file(&path, "import c\nrest\n");
+
+        Ok(())
+    }
+
+    #[test]
+    fn regex_newline_joins_lines_without_across() {
+        sd().args([r"\n", " "])
+            .write_stdin("a\nb\n")
+            .assert()
+            .success()
+            .stdout("a b ");
+    }
+
     /// Exit status when the pattern matched no input.
     const NO_MATCH: i32 = 2;
 

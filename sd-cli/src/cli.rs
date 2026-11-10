@@ -60,7 +60,8 @@ w - match full words only
     #[arg(short = 'A', long = "across")]
     /// Process each input as a whole rather than line by line. This allows
     /// patterns to match across line boundaries but uses more memory and
-    /// prevents streaming.
+    /// prevents streaming. Implied when FIND contains a newline: an actual
+    /// one, or `\n` outside a negated class in regex mode.
     pub across: bool,
 
     #[arg(long)]

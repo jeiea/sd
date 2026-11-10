@@ -23,8 +23,8 @@ _sd() {
 '--preview[Display changes in a human reviewable format (the specifics of the format are likely to change in the future)]' \
 '-F[Treat FIND and REPLACE_WITH args as literal strings]' \
 '--fixed-strings[Treat FIND and REPLACE_WITH args as literal strings]' \
-'-A[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming]' \
-'--across[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming]' \
+'-A[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming. Implied when FIND contains a newline\: an actual one, or \`\\n\` outside a negated class in regex mode]' \
+'--across[Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming. Implied when FIND contains a newline\: an actual one, or \`\\n\` outside a negated class in regex mode]' \
 '--allow-no-match[Exit 0 even if the pattern matched no input, like sed. By default sd exits 2 and says so on stderr. Inputs that did match are replaced either way]' \
 '-m[Accepted for compatibility; failing on no match is now the default]' \
 '--must-match[Accepted for compatibility; failing on no match is now the default]' \

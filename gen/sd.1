@@ -41,7 +41,7 @@ s \- make `.` match newlines
 w \- match full words only
 .TP
 \fB\-A\fR, \fB\-\-across\fR
-Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming
+Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming. Implied when FIND contains a newline: an actual one, or `\\n` outside a negated class in regex mode
 .TP
 \fB\-\-allow\-no\-match\fR
 Exit 0 even if the pattern matched no input, like sed. By default sd exits 2 and says so on stderr. Inputs that did match are replaced either way

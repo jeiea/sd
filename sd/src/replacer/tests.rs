@@ -167,3 +167,32 @@ fn escaping_unnecessarily() {
     }
     .test();
 }
+
+#[test]
+fn newline_in_find_spans_lines() {
+    assert!(spans_lines(r"a\nb", false), "regex \\n");
+    assert!(spans_lines("a\nb", false), "regex line feed");
+    assert!(spans_lines("a\nb", true), "fixed-string line feed");
+    assert!(spans_lines("a\\\nb", false), "escaped line feed");
+    assert!(spans_lines(r"a\\\nb", false), "\\n after escaped backslash");
+    assert!(spans_lines(r"[\n,]", false), "\\n in a class");
+    assert!(spans_lines(r"[^a]\n", false), "\\n after a negated class");
+}
+
+#[test]
+fn find_without_explicit_newline_stays_line_by_line() {
+    assert!(!spans_lines(r"a\nb", true), "fixed-string backslash n");
+    assert!(!spans_lines(r"a\\nb", false), "escaped backslash then n");
+    assert!(!spans_lines(r"[^\n]+", false), "\\n in a negated class");
+    assert!(!spans_lines(r"[a[^\n]]", false), "nested negated class");
+    assert!(!spans_lines(r"a\sb", false), "\\s");
+    assert!(!spans_lines(r"[^x]", false), "negated class");
+    assert!(!spans_lines(r"(?s)a.b", false), "dot matching newline");
+}
+
+/// Whether `look_for` makes the CLI read each input whole instead of by line.
+fn spans_lines(look_for: &str, literal: bool) -> bool {
+    Replacer::new(look_for.into(), String::new(), literal, None, 0)
+        .unwrap()
+        .spans_lines()
+}

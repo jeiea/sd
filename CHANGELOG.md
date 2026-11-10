@@ -21,6 +21,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Improvements
 
+- Read each input whole, as with `--across`, when FIND contains a newline
+  - That is a regex `\n` outside a negated class, or an actual newline in
+    either mode, so `sd '\n' ' '` works without `-A`
+  - Line by line, such a newline could never match anything
 - #313 Replace the unescape implementation with a more lenient one (@Orion Gonzalez)
   - Avoids the previous all-or-nothing behavior when escape parsing partially fails
 - #326 Retain file ownership on atomic writes (@Gregory)

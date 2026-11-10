@@ -47,12 +47,16 @@ fn run(options: &cli::Options) -> Result<bool> {
     };
     let sources = sources?;
 
+    // A pattern that names a line feed can never match a single line, so it
+    // implies --across.
+    let line_by_line = !options.across && !replacer.spans_lines();
+
     let mut handle = stdout().lock();
     process_sources(
         &replacer,
         &sources,
         options.preview,
-        !options.across,
+        line_by_line,
         &mut handle,
     )
 }

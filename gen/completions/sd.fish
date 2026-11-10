@@ -2,7 +2,7 @@ complete -c sd -s n -l max-replacements -d 'Limit the number of replacements tha
 complete -c sd -s f -l flags -d 'Regex flags. May be combined (like `-f mc`).' -r
 complete -c sd -s p -l preview -d 'Display changes in a human reviewable format (the specifics of the format are likely to change in the future)'
 complete -c sd -s F -l fixed-strings -d 'Treat FIND and REPLACE_WITH args as literal strings'
-complete -c sd -s A -l across -d 'Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming'
+complete -c sd -s A -l across -d 'Process each input as a whole rather than line by line. This allows patterns to match across line boundaries but uses more memory and prevents streaming. Implied when FIND contains a newline: an actual one, or `\\n` outside a negated class in regex mode'
 complete -c sd -l allow-no-match -d 'Exit 0 even if the pattern matched no input, like sed. By default sd exits 2 and says so on stderr. Inputs that did match are replaced either way'
 complete -c sd -s m -l must-match -d 'Accepted for compatibility; failing on no match is now the default'
 complete -c sd -s h -l help -d 'Print help (see more with \'--help\')'

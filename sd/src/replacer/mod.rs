@@ -69,6 +69,18 @@ impl Replacer {
         })
     }
 
+    /// Whether the pattern names a line feed, which a line-by-line pass strips
+    /// from its input and so could never match.
+    ///
+    /// Only an explicit one counts: a literal line feed, or `\n` outside a
+    /// negated class. Patterns such as `\s` or `(?s).` that merely can match a
+    /// line feed also match within a line, so they keep streaming.
+    pub fn spans_lines(&self) -> bool {
+        // In fixed-string mode the pattern went through `regex::escape`, which
+        // leaves a line feed as is and turns a typed `\n` into `\\n`.
+        has_explicit_line_feed(self.regex.as_str())
+    }
+
     /// Replaces every match in `content`, up to the configured limit.
     ///
     /// Returns [`Cow::Borrowed`] when the pattern did not match and
@@ -125,4 +137,31 @@ impl Replacer {
         new.extend_from_slice(&haystack[last_match..]);
         Cow::Owned(new)
     }
+}
+
+/// Scans for `\n` or a line feed outside any negated class, so `[\n,]` counts
+/// and `[^\n]` does not. Other spellings such as `\x0a` are not recognized.
+fn has_explicit_line_feed(pattern: &str) -> bool {
+    // One entry per open class, nested ones included, telling if it is negated.
+    let mut classes = Vec::new();
+    let mut chars = pattern.chars();
+    while let Some(c) = chars.next() {
+        let excluded = classes.contains(&true);
+        match c {
+            // Always consume the escaped character, so `\\n` and `\[` are
+            // not misread. An escaped line feed still matches a line feed.
+            '\\' => {
+                if matches!(chars.next(), Some('n' | '\n')) && !excluded {
+                    return true;
+                }
+            }
+            '\n' if !excluded => return true,
+            '[' => classes.push(chars.as_str().starts_with('^')),
+            ']' => {
+                classes.pop();
+            }
+            _ => {}
+        }
+    }
+    false
 }
