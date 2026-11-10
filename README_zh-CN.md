@@ -156,23 +156,31 @@ hyperfine --warmup 3 --export-markdown out.md \
 
 ### 特殊情况
 
-sd 会将以 `-` 开头的每个参数解释为（可能是未知的）标志。
-    
-尊重常见的惯例，使用 `--` 来表示标志的结束：
+以 `-` 开头的参数，只要不是 sd 自身的选项，就会被当作 FIND 或 REPLACE_WITH，
+因此 Markdown 列表项和类似选项的文本无需转义：
 
 ```bash
-$ echo "./hello foo" | sd "foo" "-w"
-error: Found argument '-w' which wasn't expected, or isn't valid in this context
-
-USAGE:
-    sd [OPTIONS] <find> <replace-with> [files]...
-
-For more information try --help
-$ echo "./hello foo" | sd "foo" -- "-w"
-./hello -w
-$ echo "./hello --foo" | sd -- "--foo" "-w"
+$ echo "- item" | sd -F "- item" "- done"
+- done
+$ echo "./hello --foo" | sd "--foo" "-w"
 ./hello -w
 ```
+
+拼写错误的选项也会被同样处理，因此会让其他参数错位，通常表现为无效路径：
+
+```bash
+$ sd --preveiw 'foo' 'bar' file.txt
+error: invalid path: bar
+```
+
+如果要查找或替换的字符串本身就是选项（如 `-F`、`-A`），使用 `--` 来表示标志的结束：
+
+```bash
+$ echo "./hello -A" | sd -- "-A" "-F"
+./hello -F
+```
+
+与这类值一起使用时，请将选项的值分开写（`-n 1` 而不是 `-n1`），或把选项放在位置参数之后。
 
 ### 转义特殊字符
 

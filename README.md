@@ -180,22 +180,35 @@ Install through
    ```
 
 ### Edge cases
-sd will interpret every argument starting with `-` as a (potentially unknown) flag.
-The common convention of using `--` to signal the end of flags is respected:
+An argument starting with `-` is taken as FIND or REPLACE_WITH unless it is one
+of sd's own options, so Markdown list items and option-like text need no
+escaping:
 
 ```bash
-$ echo "./hello foo" | sd "foo" "-w"
-error: Found argument '-w' which wasn't expected, or isn't valid in this context
-
-USAGE:
-    sd [OPTIONS] <find> <replace-with> [files]...
-
-For more information try --help
-$ echo "./hello foo" | sd "foo" -- "-w"
-./hello -w
-$ echo "./hello --foo" | sd -- "--foo" "-w"
+$ echo "- item" | sd -F "- item" "- done"
+- done
+$ echo "./hello --foo" | sd "--foo" "-w"
 ./hello -w
 ```
+
+A mistyped option is taken the same way, so it shifts the other arguments and
+usually shows up as an invalid path:
+
+```bash
+$ sd --preveiw 'foo' 'bar' file.txt
+error: invalid path: bar
+```
+
+To find or replace with a string that is itself an option, such as `-F` or
+`-A`, use `--` to signal the end of flags:
+
+```bash
+$ echo "./hello -A" | sd -- "-A" "-F"
+./hello -F
+```
+
+Alongside such a value, give option values separately (`-n 1`, not `-n1`), or
+place the options after the positional arguments.
 
 ### Processing modes
 

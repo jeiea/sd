@@ -356,6 +356,21 @@ mod cli {
     }
 
     #[test]
+    fn markdown_list_item_is_replaced_without_double_dash() -> Result<()> {
+        let mut file = tempfile::NamedTempFile::new()?;
+        file.write_all("- 항목\n".as_bytes())?;
+        let path = file.into_temp_path();
+
+        sd().args(["-F", "- 항목", "- 새 항목"])
+            .arg(&path)
+            .assert()
+            .success();
+        assert_file(&path, "- 새 항목\n");
+
+        Ok(())
+    }
+
+    #[test]
     fn regex_newline_joins_lines_without_across() {
         sd().args([r"\n", " "])
             .write_stdin("a\nb\n")
