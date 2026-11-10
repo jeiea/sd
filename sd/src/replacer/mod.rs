@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use crate::{Result, unescape};
+use crate::{Error, Result, unescape};
 
 use regex::bytes::Regex;
 
@@ -8,6 +8,7 @@ use regex::bytes::Regex;
 mod tests;
 mod validate;
 
+use validate::find_unknown_capture;
 pub use validate::{InvalidReplaceCapture, validate_replace};
 
 pub struct Replacer {
@@ -26,11 +27,11 @@ impl Replacer {
         replacements: usize,
     ) -> Result<Self> {
         let (look_for, replace_with) = if is_literal {
-            (regex::escape(&look_for), replace_with.into_bytes())
+            (regex::escape(&look_for), replace_with)
         } else {
             validate_replace(&replace_with)?;
 
-            (look_for, unescape::unescape(&replace_with).into_bytes())
+            (look_for, unescape::unescape(&replace_with))
         };
 
         let mut regex = regex::bytes::RegexBuilder::new(&look_for);
@@ -61,9 +62,18 @@ impl Replacer {
             });
         };
 
+        let regex = regex.build()?;
+
+        if !is_literal {
+            if let Some(reference) = find_unknown_capture(&replace_with, &regex)
+            {
+                return Err(Error::UnknownCapture(reference.to_owned()));
+            }
+        }
+
         Ok(Self {
-            regex: regex.build()?,
-            replace_with,
+            regex,
+            replace_with: replace_with.into_bytes(),
             is_literal,
             replacements,
         })

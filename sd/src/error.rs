@@ -14,6 +14,11 @@ pub enum Error {
     InvalidPath(PathBuf),
     #[error("{0}")]
     InvalidReplaceCapture(#[from] InvalidReplaceCapture),
+    #[error(
+        "`{0}` in REPLACE_WITH names a capture group that FIND does not \
+         have; write `$$` for a literal `$`, or use -F for plain text"
+    )]
+    UnknownCapture(String),
     #[error("{0}")]
     FailedJobs(FailedJobs),
 }

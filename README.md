@@ -139,11 +139,14 @@ Install through
    123 dollars and 45 cents
    ```
 
-   In the unlikely case you stumble upon ambiguities, resolve them by using `${var}` instead of `$var`. Here's an example:
+   A reference to a group that FIND does not have is an error rather than an
+   empty string, so a shell variable left in single quotes or an ambiguous name
+   is caught before any file is written. Resolve ambiguities by using `${var}`
+   instead of `$var`, and write `$$` for a literal `$`:
 
    ```sh
    > echo '123.45' | sd '(?P<dollars>\d+)\.(?P<cents>\d+)' '$dollars_dollars and $cents_cents'
-    and
+   error: `$dollars_dollars` in REPLACE_WITH names a capture group that FIND does not have; write `$$` for a literal `$`, or use -F for plain text
 
    > echo '123.45' | sd '(?P<dollars>\d+)\.(?P<cents>\d+)' '${dollars}_dollars and ${cents}_cents'
    123_dollars and 45_cents

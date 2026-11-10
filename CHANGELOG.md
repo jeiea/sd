@@ -18,6 +18,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     `$` or `(`
   - `--allow-no-match` restores the previous exit status 0 without the message
   - `-m` / `--must-match` is still accepted but now matches the default
+- Fail with status 1 before writing anything when REPLACE_WITH refers to a
+  capture group that FIND does not have, such as `$HOME` in single quotes
+  - Previously the reference silently became an empty string
+  - The message suggests `$$` for a literal `$`, or `-F`
 
 ### Improvements
 

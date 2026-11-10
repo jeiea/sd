@@ -78,7 +78,8 @@ w - match full words only
     pub find: String,
 
     /// What to replace each match with. Unless in string mode, you may
-    /// use captured values like $1, $2, etc.
+    /// use captured values like $1, $2, etc. Referring to a group FIND does
+    /// not have is an error; write $$ for a literal $.
     pub replace_with: String,
 
     /// The path to file(s). This is optional - sd can also read from STDIN.

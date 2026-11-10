@@ -114,11 +114,13 @@ hyperfine --warmup 3 --export-markdown out.md \
    123 dollars and 45 cents
    ```
 
-   在不太可能出现歧义的情况下，通过使用 `${var}` 而不是 `$var` 来解决。这里有一个例子：
+   引用 FIND 中不存在的捕获组会报错，而不是替换为空字符串，因此留在单引号中的
+   shell 变量或有歧义的名称会在写入任何文件之前被发现。通过使用 `${var}` 而不是
+   `$var` 来消除歧义，使用 `$$` 表示字面量 `$`：
 
    ```sh
    > echo '123.45' | sd '(?P<dollars>\d+)\.(?P<cents>\d+)' '$dollars_dollars and $cents_cents'
-    and
+   error: `$dollars_dollars` in REPLACE_WITH names a capture group that FIND does not have; write `$$` for a literal `$`, or use -F for plain text
 
    > echo '123.45' | sd '(?P<dollars>\d+)\.(?P<cents>\d+)' '${dollars}_dollars and ${cents}_cents'
    123_dollars and 45_cents

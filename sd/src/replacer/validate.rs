@@ -1,5 +1,7 @@
 use std::{error::Error, fmt, str::CharIndices};
 
+use regex::bytes::Regex;
+
 #[derive(Debug)]
 pub struct InvalidReplaceCapture {
     original_replace: String,
@@ -136,6 +138,32 @@ pub fn validate_replace(s: &str) -> Result<(), InvalidReplaceCapture> {
     }
 
     Ok(())
+}
+
+/// Returns the first capture reference in `replace`, as written, that names no
+/// group of `regex`. The regex crate would expand it to an empty string.
+pub fn find_unknown_capture<'rep>(
+    replace: &'rep str,
+    regex: &Regex,
+) -> Option<&'rep str> {
+    ReplaceCaptureIter::new(replace)
+        .find(|cap| !has_group(regex, cap.name))
+        // Include the leading `$`, which the span leaves out.
+        .map(|cap| &replace[cap.span.start - 1..cap.span.end])
+}
+
+/// Resolves a reference the way the regex crate does: a number is an index,
+/// anything else a name, either one optionally in braces.
+fn has_group(regex: &Regex, name: &str) -> bool {
+    let name = name
+        .strip_prefix('{')
+        .and_then(|name| name.strip_suffix('}'))
+        .unwrap_or(name);
+
+    match name.parse::<usize>() {
+        Ok(index) => index < regex.captures_len(),
+        Err(_) => regex.capture_names().flatten().any(|group| group == name),
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

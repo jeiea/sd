@@ -355,6 +355,31 @@ mod cli {
         Ok(())
     }
 
+    /// Shell variables written into single quotes reach sd as `$NAME`, which
+    /// regex replacement would otherwise turn into an empty string.
+    #[test]
+    fn unknown_capture_in_replacement_fails_before_writing() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let paths = [dir.path().join("a.json"), dir.path().join("b.json")];
+        for path in &paths {
+            fs::write(path, "path=old\n")?;
+        }
+
+        let assert = sd()
+            .args(["path=.*", "path=$SOA_URL/import_map.json"])
+            .args(&paths)
+            .assert()
+            .code(1);
+        let stderr = String::from_utf8_lossy(&assert.get_output().stderr);
+        assert!(stderr.contains("`$SOA_URL`"), "{stderr}");
+        assert!(stderr.contains("`$$`") && stderr.contains("-F"), "{stderr}");
+        for path in &paths {
+            assert_file(path, "path=old\n");
+        }
+
+        Ok(())
+    }
+
     #[test]
     fn markdown_list_item_is_replaced_without_double_dash() -> Result<()> {
         let mut file = tempfile::NamedTempFile::new()?;
@@ -517,7 +542,7 @@ mod cli {
     /// for a pattern meant literally to find nothing.
     #[test]
     fn no_match_with_regex_metacharacters_suggests_fixed_strings() {
-        sd().args(["cost $5", "cost $6"])
+        sd().args(["cost $5", "price 5"])
             .write_stdin("cost $5\n")
             .assert()
             .code(NO_MATCH)

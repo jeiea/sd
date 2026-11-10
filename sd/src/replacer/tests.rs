@@ -196,3 +196,38 @@ fn spans_lines(look_for: &str, literal: bool) -> bool {
         .unwrap()
         .spans_lines()
 }
+
+#[test]
+fn replacement_naming_a_missing_group_is_rejected() {
+    for (look_for, replace_with, reference) in [
+        ("path=.*", "path=$SOA_URL/import_map.json", "$SOA_URL"),
+        ("x", "${n0} ${vis}", "${n0}"),
+        ("x", "`${end.action} ${id}`", "${end.action}"),
+        ("(a)", "$1$2", "$2"),
+    ] {
+        assert_eq!(
+            unknown_capture(look_for, replace_with).as_deref(),
+            Some(reference),
+            "{replace_with}"
+        );
+    }
+}
+
+#[test]
+fn replacement_naming_existing_groups_is_accepted() {
+    assert_eq!(unknown_capture("(a)(?P<b>b)", "$0 $1 ${2} $b ${b}"), None);
+    assert_eq!(unknown_capture("x", "$$HOME"), None, "escaped dollar");
+    assert!(
+        Replacer::new("x".into(), "$HOME".into(), true, None, 0).is_ok(),
+        "fixed strings"
+    );
+}
+
+/// The capture reference `Replacer::new` rejects, if any.
+fn unknown_capture(look_for: &str, replace_with: &str) -> Option<String> {
+    match Replacer::new(look_for.into(), replace_with.into(), false, None, 0) {
+        Err(crate::Error::UnknownCapture(reference)) => Some(reference),
+        Err(e) => panic!("unexpected error: {e}"),
+        Ok(_) => None,
+    }
+}
